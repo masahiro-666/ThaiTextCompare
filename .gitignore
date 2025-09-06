@@ -468,3 +468,28 @@ benchmarks/results/
 # IDE-specific files
 .vs/
 .vscode/settings.json.local
+
+# Release assets folder (temporary for GitHub release preparation)
+release-assets/
+
+# Unity Package build artifacts (keep source Unity/ folder)
+Unity/Runtime/*.dll.meta
+Unity/Runtime/*.xml.meta
+Unity/**/*.meta
+
+# Temporary files
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Keep essential project files
+!chief_complaints.json
+!setup.md
+!README.md
+!Unity/package.json
+!Unity/README.md
+!Unity/CHANGELOG.md
