@@ -1,0 +1,16 @@
+{
+    "name": "ThaiTextCompare.Runtime",
+    "rootNamespace": "ThaiTextCompare",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "ThaiTextCompare.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

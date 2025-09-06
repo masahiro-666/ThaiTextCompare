@@ -1,0 +1,41 @@
+{
+  "name": "com.thaitextcompare.core",
+  "displayName": "Thai Text Compare",
+  "version": "1.0.0",
+  "description": "Advanced Thai medical text comparison system with fuzzy matching, typo correction, and compound symptom handling. Optimized for Unity applications.",
+  "unity": "2021.3",
+  "unityRelease": "0f1",
+  "documentationUrl": "https://github.com/masahiro-666/ThaiTextCompare/blob/main/Unity/README.md",
+  "changelogUrl": "https://github.com/masahiro-666/ThaiTextCompare/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/masahiro-666/ThaiTextCompare/blob/main/LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/masahiro-666/ThaiTextCompare.git",
+    "directory": "Unity"
+  },
+  "dependencies": {},
+  "keywords": [
+    "thai",
+    "text",
+    "comparison",
+    "medical",
+    "nlp",
+    "fuzzy-matching",
+    "tokenization",
+    "unity"
+  ],
+  "author": {
+    "name": "Thai Text Compare Contributors",
+    "email": "support@thaitextcompare.com",
+    "url": "https://github.com/masahiro-666/ThaiTextCompare"
+  },
+  "type": "library",
+  "hideInEditor": false,
+  "samples": [
+    {
+      "displayName": "Basic Thai Text Comparison",
+      "description": "Basic example showing how to compare Thai medical texts",
+      "path": "Samples~/BasicComparison"
+    }
+  ]
+}

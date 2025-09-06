@@ -16,6 +16,8 @@ class Program
         public object metadata { get; set; } = new();
         public TestCase[] testCases { get; set; } = Array.Empty<TestCase>();
     }
+
+#if !UNITY_BUILD
     static void Main()
     {
         Console.WriteLine("🏥 Thai Medical Text Compare - Enhanced Version");
@@ -23,6 +25,7 @@ class Program
 
         RunOriginalTests();
     }
+#endif
 
     static (string, string, string)[] LoadTestCasesFromJson()
     {
@@ -107,10 +110,20 @@ class Program
             Console.WriteLine($"  ✅ Matched: [{string.Join(", ", matchedWords)}] ({matchedWords.Count} words)");
             Console.WriteLine($"  ❌ Missing from Text2: [{string.Join(", ", missingWords)}] ({missingWords.Count} words)");
             Console.WriteLine($"  ➕ Extra in Text2: [{string.Join(", ", extraWords)}] ({extraWords.Count} words)");
+
+            // Display typo corrections if any
+            if (result.TypoCorrections.Count > 0)
+            {
+                Console.WriteLine($"  🔧 Typo Corrections: [{string.Join(", ", result.TypoCorrections)}] ({result.TypoCorrections.Count} corrections)");
+            }
+
             Console.WriteLine($"  Text1→Text2 Coverage: {result.Coverage1}% (Primary Score)");
             Console.WriteLine($"  Text2→Text1 Coverage: {result.Coverage2}%");
             Console.WriteLine($"  Jaccard Similarity: {jaccardSimilarity}% (Reference)");
-            Console.WriteLine($"  Match Result: {result.IsMatch} (Text2 contains ALL Text1 words: {result.Coverage1 >= 100}%)");
+
+            // Show match result with typo correction context
+            var matchContext = result.TypoCorrections.Count > 0 ? $"{result.IsMatch} (Typo-corrected match)" : $"{result.IsMatch}";
+            Console.WriteLine($"  Match Result: {matchContext} (Text2 contains ALL Text1 words: {result.Coverage1 >= 100}%)");
             Console.WriteLine();
         }
     }

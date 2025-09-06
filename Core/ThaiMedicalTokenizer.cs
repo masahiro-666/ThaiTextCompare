@@ -82,6 +82,7 @@ public class ThaiMedicalTokenizer
             }
             else
             {
+                // Enhanced typo detection - try multiple approaches
                 var bestMatch = FindBestFuzzyMatch(normalizedWord);
                 if (bestMatch != null)
                 {
@@ -89,6 +90,7 @@ public class ThaiMedicalTokenizer
                 }
                 else
                 {
+                    // Try partial matching for compound words
                     var matches = _dictSet.Where(d => normalizedWord.Contains(d)).ToList();
                     if (matches.Any())
                     {
@@ -108,8 +110,17 @@ public class ThaiMedicalTokenizer
                     }
                     else
                     {
+                        // Last resort: try to parse as concatenated word or add as-is for unknown terms
                         var subTokens = ParseConcatenatedWord(normalizedWord);
-                        result.AddRange(subTokens);
+                        if (subTokens.Any(t => _dictSet.Contains(t)))
+                        {
+                            result.AddRange(subTokens);
+                        }
+                        else
+                        {
+                            // Keep the original word if no matches found
+                            result.Add(normalizedWord);
+                        }
                     }
                 }
             }
@@ -262,6 +273,39 @@ public class ThaiMedicalTokenizer
         return candidates.FirstOrDefault();
     }
 
+    /// <summary>
+    /// Calculates Levenshtein distance between two strings for more accurate typo detection
+    /// </summary>
+    /// <param name="s1">First string</param>
+    /// <param name="s2">Second string</param>
+    /// <returns>Levenshtein distance</returns>
+    private static int CalculateLevenshteinDistance(string s1, string s2)
+    {
+        if (string.IsNullOrEmpty(s1)) return s2?.Length ?? 0;
+        if (string.IsNullOrEmpty(s2)) return s1.Length;
+
+        int[,] matrix = new int[s1.Length + 1, s2.Length + 1];
+
+        // Initialize first row and column
+        for (int i = 0; i <= s1.Length; i++) matrix[i, 0] = i;
+        for (int j = 0; j <= s2.Length; j++) matrix[0, j] = j;
+
+        // Fill the matrix
+        for (int i = 1; i <= s1.Length; i++)
+        {
+            for (int j = 1; j <= s2.Length; j++)
+            {
+                int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+                matrix[i, j] = Math.Min(
+                    Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
+                    matrix[i - 1, j - 1] + cost
+                );
+            }
+        }
+
+        return matrix[s1.Length, s2.Length];
+    }
+
     private static double CalculateSimilarity(string s1, string s2)
     {
         if (string.IsNullOrEmpty(s1) || string.IsNullOrEmpty(s2)) return 0;
@@ -364,15 +408,114 @@ public class ThaiMedicalTokenizer
 
         // Apply compound patterns from JSON configuration
         var compoundPatterns = SymptomDictionary.GetCompoundSymptomPatterns();
+
         foreach (var (pattern, expansion) in compoundPatterns)
         {
             if (text == pattern)
             {
                 return expansion;
             }
+            // Also check if the pattern is contained within the text and replace it
+            else if (text.Contains(pattern))
+            {
+                text = text.Replace(pattern, expansion);
+            }
+        }
+
+        // Fallback patterns if JSON loading fails
+        var fallbackPatterns = new Dictionary<string, string>
+        {
+            { "แขนซ้าย-ขาซ้ายอ่อนแรง", "แขนซ้ายอ่อนแรง ขาซ้ายอ่อนแรง" },
+            { "แขนซ้ายขาซ้ายอ่อนแรง", "แขนซ้ายอ่อนแรง ขาซ้ายอ่อนแรง" },
+            { "ขาซ้าย-แขนซ้ายอ่อนแรง", "ขาซ้ายอ่อนแรง แขนซ้ายอ่อนแรง" },
+            { "ขาซ้ายแขนซ้ายอ่อนแรง", "ขาซ้ายอ่อนแรง แขนซ้ายอ่อนแรง" },
+            { "แขนขวา-ขาขวาอ่อนแรง", "แขนขวาอ่อนแรง ขาขวาอ่อนแรง" },
+            { "แขนขวาขาขวาอ่อนแรง", "แขนขวาอ่อนแรง ขาขวาอ่อนแรง" },
+            { "ขาขวา-แขนขวาอ่อนแรง", "ขาขวาอ่อนแรง แขนขวาอ่อนแรง" },
+            { "ขาขวาแขนขวาอ่อนแรง", "ขาขวาอ่อนแรง แขนขวาอ่อนแรง" }
+        };
+
+        foreach (var (pattern, expansion) in fallbackPatterns)
+        {
+            if (text == pattern)
+            {
+                return expansion;
+            }
+            else if (text.Contains(pattern))
+            {
+                text = text.Replace(pattern, expansion);
+            }
         }
 
         return text;
+    }
+
+    /// <summary>
+    /// Gets typo correction suggestions for a given word
+    /// </summary>
+    /// <param name="word">Word to check for typos</param>
+    /// <returns>Dictionary of correction type and suggested corrections</returns>
+    public Dictionary<string, List<string>> GetTypoSuggestions(string word)
+    {
+        var suggestions = new Dictionary<string, List<string>>
+        {
+            ["exact_match"] = new List<string>(),
+            ["character_substitution"] = new List<string>(),
+            ["missing_character"] = new List<string>(),
+            ["extra_character"] = new List<string>(),
+            ["fuzzy_match"] = new List<string>()
+        };
+
+        var normalizedWord = NormalizeWord(word);
+
+        // Check for exact match first
+        if (_dictSet.Contains(normalizedWord))
+        {
+            suggestions["exact_match"].Add(normalizedWord);
+            return suggestions;
+        }
+
+        // Missing character suggestions
+        foreach (var dictWord in _dictSet.Where(d => d.Length == normalizedWord.Length + 1))
+        {
+            for (int i = 0; i <= normalizedWord.Length; i++)
+            {
+                string withInsertion = normalizedWord.Substring(0, i) + dictWord[i] + normalizedWord.Substring(i);
+                if (withInsertion == dictWord)
+                {
+                    suggestions["missing_character"].Add(dictWord);
+                    break;
+                }
+            }
+        }
+
+        // Extra character suggestions
+        foreach (var dictWord in _dictSet.Where(d => d.Length == normalizedWord.Length - 1))
+        {
+            for (int i = 0; i < normalizedWord.Length; i++)
+            {
+                string withDeletion = normalizedWord.Substring(0, i) + normalizedWord.Substring(i + 1);
+                if (withDeletion == dictWord)
+                {
+                    suggestions["extra_character"].Add(dictWord);
+                    break;
+                }
+            }
+        }
+
+        // Fuzzy matches using Levenshtein distance
+        var fuzzyMatches = _dictSet
+            .Where(d => Math.Abs(d.Length - normalizedWord.Length) <= 2)
+            .Where(d => CalculateLevenshteinDistance(normalizedWord, d) <= 2)
+            .Where(d => CalculateSimilarity(normalizedWord, d) >= 0.6)
+            .OrderBy(d => CalculateLevenshteinDistance(normalizedWord, d))
+            .ThenByDescending(d => CalculateSimilarity(normalizedWord, d))
+            .Take(5)
+            .ToList();
+
+        suggestions["fuzzy_match"].AddRange(fuzzyMatches);
+
+        return suggestions;
     }
 
     /// <summary>

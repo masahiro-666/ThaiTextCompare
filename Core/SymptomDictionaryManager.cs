@@ -65,8 +65,8 @@ public static class SymptomDictionaryManager
             return createdPatterns;
 
         // Create compound pattern for multiple body parts
-        var compoundPattern = string.Join("", bodyParts.Select(part => $"{part}{side}")) + condition;
-        var expandedFormat = string.Join(" ", bodyParts.Select(part => $"{part}{side}{condition}"));
+        var compoundPattern = string.Join("", bodyParts.Where(part => part != null).Select(part => $"{part}{side}")) + condition;
+        var expandedFormat = string.Join(" ", bodyParts.Where(part => part != null).Select(part => $"{part}{side}{condition}"));
 
         if (SymptomDictionary.AddCompoundSymptomPattern(compoundPattern, expandedFormat))
         {

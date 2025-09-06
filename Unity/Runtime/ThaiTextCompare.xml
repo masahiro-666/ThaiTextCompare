@@ -1,0 +1,293 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ThaiTextCompare</name>
+    </assembly>
+    <members>
+        <member name="T:ThaiTextCompare.Core.SymptomDictionary">
+            <summary>
+            Manages Thai medical symptom dictionary with dynamic word addition and compound pattern support
+            </summary>
+        </member>
+        <member name="F:ThaiTextCompare.Core.SymptomDictionary.DefaultSymptomDict">
+            <summary>
+            Default Thai medical symptom dictionary loaded from JSON file
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.LoadDefaultSymptomsFromJson">
+            <summary>
+            Loads default symptoms from JSON file
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.GetFallbackSymptoms">
+            <summary>
+            Fallback symptom list if JSON loading fails
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.GetCurrentSymptomDict">
+            <summary>
+            Gets the current symptom dictionary including dynamically added words
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.AddSymptomWords(System.String[])">
+            <summary>
+            Adds new words to the symptom dictionary
+            </summary>
+            <param name="newWords">Array of new symptom words to add</param>
+            <returns>Number of words successfully added</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.AddCompoundSymptomPattern(System.String,System.String)">
+            <summary>
+            Adds a compound symptom pattern that will be automatically expanded
+            </summary>
+            <param name="compoundPattern">The compound pattern (e.g., "แขนซ้าย-ขาซ้ายอ่อนแรง")</param>
+            <param name="expandedFormat">The expanded format (e.g., "แขนซ้ายอ่อนแรง ขาซ้ายอ่อนแรง")</param>
+            <returns>True if added successfully, false if pattern already exists</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.GetCompoundSymptomPatterns">
+            <summary>
+            Gets all registered compound symptom patterns
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.RemoveSymptomWords(System.String[])">
+            <summary>
+            Removes words from the symptom dictionary
+            </summary>
+            <param name="wordsToRemove">Words to remove</param>
+            <returns>Number of words successfully removed</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.ResetToDefault">
+            <summary>
+            Resets the dictionary to the default state
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.GetDictionaryStats">
+            <summary>
+            Gets statistics about the current dictionary
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.ReloadFromJson">
+            <summary>
+            Reloads the default dictionary from JSON file
+            </summary>
+            <returns>True if reload was successful, false otherwise</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.GetJsonFilePath">
+            <summary>
+            Gets the path to the JSON file being used
+            </summary>
+            <returns>Path to JSON file or null if using fallback</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.LoadSynonymMappingsFromJson">
+            <summary>
+            Loads synonym mappings from JSON file
+            </summary>
+            <returns>Dictionary of synonym mappings or fallback if JSON not available</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.LoadMedicalAbbreviationsFromJson">
+            <summary>
+            Loads medical abbreviations from JSON file
+            </summary>
+            <returns>Dictionary of medical abbreviations or fallback if JSON not available</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.LoadConjunctionsFromJson">
+            <summary>
+            Loads Thai conjunctions from JSON file
+            </summary>
+            <returns>Array of Thai conjunctions or fallback if JSON not available</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.LoadAndApplyCompoundPatternsFromJson">
+            <summary>
+            Loads compound patterns from JSON and applies them to the dictionary
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.ApplySideWeaknessPatternsFromJson(ThaiTextCompare.Core.SideWeaknessPatterns)">
+            <summary>
+            Applies side weakness patterns from JSON configuration
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.CreateSideWeaknessPatternsFromConfig(System.String,System.String[],System.String)">
+            <summary>
+            Creates side weakness patterns from JSON config
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.GetFallbackSynonymMappings">
+            <summary>
+            Fallback synonym mappings if JSON loading fails
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.GetFallbackMedicalAbbreviations">
+            <summary>
+            Fallback medical abbreviations if JSON loading fails
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.GetFallbackConjunctions">
+            <summary>
+            Fallback Thai conjunctions if JSON loading fails
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionary.ApplyFallbackCompoundPatterns">
+            <summary>
+            Applies fallback compound patterns if JSON loading fails
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.SymptomJsonData">
+            <summary>
+            Data structure for loading symptoms from JSON
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.SideWeaknessPatterns">
+            <summary>
+            Side weakness pattern configuration
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.SideWeaknessConfig">
+            <summary>
+            Configuration for side weakness patterns
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.SymptomMetadata">
+            <summary>
+            Metadata for symptom JSON file
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.SymptomDictionaryManager">
+            <summary>
+            Utility class for managing symptom dictionary and compound patterns
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionaryManager.AddSymptoms(System.String[],System.String,System.String)">
+            <summary>
+            Adds new symptom words and optionally creates a compound pattern
+            </summary>
+            <param name="symptoms">New symptom words to add</param>
+            <param name="compoundPattern">Optional compound pattern (e.g., "แขนซ้าย-ขาซ้ายอ่อนแรง")</param>
+            <param name="expandedFormat">Optional expanded format (e.g., "แขนซ้ายอ่อนแรง ขาซ้ายอ่อนแรง")</param>
+            <returns>Result with details of the operation</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionaryManager.CreateSideWeaknessPatterns(System.String,System.String[],System.String)">
+            <summary>
+            Creates common compound patterns for body side weakness
+            </summary>
+            <param name="side">Side (ซ้าย or ขวา)</param>
+            <param name="bodyParts">Body parts (e.g., แขน, ขา)</param>
+            <param name="condition">Condition (e.g., อ่อนแรง)</param>
+            <returns>List of created patterns</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionaryManager.LoadFromJson(System.String)">
+            <summary>
+            Loads symptoms and patterns from a JSON configuration
+            </summary>
+            <param name="jsonConfig">JSON configuration string</param>
+            <returns>Result of the loading operation</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionaryManager.ExportToJson">
+            <summary>
+            Exports current configuration to JSON
+            </summary>
+            <returns>JSON representation of current symptoms and patterns</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionaryManager.CreateTokenizer">
+            <summary>
+            Creates a new tokenizer with the current dynamic dictionary
+            </summary>
+            <returns>New tokenizer instance</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.SymptomDictionaryManager.SetupCommonPatterns">
+            <summary>
+            Quick setup for common medical patterns
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.AddSymptomsResult">
+            <summary>
+            Result of adding symptoms operation
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.LoadConfigResult">
+            <summary>
+            Result of loading configuration operation
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.SymptomConfig">
+            <summary>
+            JSON configuration structure
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.ConfigStatistics">
+            <summary>
+            Statistics for configuration export
+            </summary>
+        </member>
+        <member name="T:ThaiTextCompare.Core.ThaiMedicalTokenizer">
+            <summary>
+            Tokenizes Thai medical text with support for dynamic dictionary and compound patterns
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.#ctor(System.String[])">
+            <summary>
+            Initializes a new instance of ThaiMedicalTokenizer
+            </summary>
+            <param name="symptomDict">Array of medical symptoms for tokenization</param>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.CreateWithDynamicDictionary">
+            <summary>
+            Creates a tokenizer with dynamic dictionary support
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.RefreshDictionary">
+            <summary>
+            Refreshes the tokenizer with the current dynamic dictionary
+            </summary>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.TokenizeThaiSymptoms(System.String)">
+            <summary>
+            Tokenizes Thai medical symptom text into individual symptoms
+            </summary>
+            <param name="text">Thai medical text to tokenize</param>
+            <returns>List of tokenized symptoms</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.FilterConjunctions(System.Collections.Generic.List{System.String})">
+            <summary>
+            Filters out Thai conjunctions and common function words from the token list
+            </summary>
+            <param name="tokens">List of tokens to filter</param>
+            <returns>Filtered list without conjunctions</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.CalculateLevenshteinDistance(System.String,System.String)">
+            <summary>
+            Calculates Levenshtein distance between two strings for more accurate typo detection
+            </summary>
+            <param name="s1">First string</param>
+            <param name="s2">Second string</param>
+            <returns>Levenshtein distance</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.IsThaiCharacter(System.Char)">
+            <summary>
+            Determines if a character is in the Thai Unicode range
+            </summary>
+            <param name="c">Character to check</param>
+            <returns>True if character is Thai, false otherwise</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.ExpandCompoundSymptoms(System.String)">
+            <summary>
+            Expands compound symptoms using dynamic patterns from JSON configuration
+            </summary>
+            <param name="text">Text containing compound symptoms</param>
+            <returns>Text with expanded compound symptoms</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.GetTypoSuggestions(System.String)">
+            <summary>
+            Gets typo correction suggestions for a given word
+            </summary>
+            <param name="word">Word to check for typos</param>
+            <returns>Dictionary of correction type and suggested corrections</returns>
+        </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.NormalizeSpaces(System.String)">
+            <summary>
+            Normalizes spaces and medical abbreviations in text
+            </summary>
+            <param name="s">Text to normalize</param>
+            <returns>Normalized text</returns>
+        </member>
+    </members>
+</doc>

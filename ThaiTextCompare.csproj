@@ -5,11 +5,26 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyTitle>Thai Text Compare</AssemblyTitle>
-    <AssemblyDescription>Advanced Thai medical text comparison system with fuzzy matching and compound symptom handling</AssemblyDescription>
+    <AssemblyDescription>Advanced Thai medical text comparison system with fuzzy matching and compound symptom handling. Compatible with Unity.</AssemblyDescription>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <!-- Release configuration optimized for library usage including Unity -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>ThaiTextCompare</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>ThaiTextCompare Contributors</Authors>
+    <Description>Advanced Thai medical text comparison library with fuzzy matching, typo correction, and compound symptom handling. Optimized for Unity and .NET applications.</Description>
+    <PackageTags>thai;text;comparison;medical;unity;fuzzy-matching;nlp</PackageTags>
+    <RepositoryUrl>https://github.com/masahiro-666/ThaiTextCompare</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -27,6 +42,8 @@
     <Compile Remove="Tests/**" />
     <EmbeddedResource Remove="Tests/**" />
     <None Remove="Tests/**" />
+    <Compile Remove="Unity/**" />
+    <None Remove="Unity/**" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Linq;
 
 namespace ThaiTextCompare.Core;
 
@@ -38,6 +39,43 @@ public static class SymptomDictionary
 
             var jsonContent = File.ReadAllText(jsonPath);
             var symptomData = JsonSerializer.Deserialize<SymptomJsonData>(jsonContent);
+
+            // Load compound patterns during initialization
+            if (symptomData?.DefaultCompoundPatterns != null)
+            {
+                lock (_compoundSymptomPatterns)
+                {
+                    _compoundSymptomPatterns.Clear();
+                    foreach (var (pattern, expansion) in symptomData.DefaultCompoundPatterns)
+                    {
+                        _compoundSymptomPatterns[pattern] = expansion;
+                        // Also add version without hyphens
+                        var withoutHyphen = pattern.Replace("-", "");
+                        if (!_compoundSymptomPatterns.ContainsKey(withoutHyphen))
+                        {
+                            _compoundSymptomPatterns[withoutHyphen] = expansion;
+                        }
+                    }
+                }
+            }
+
+            // Load common patterns during initialization
+            if (symptomData?.CommonPatterns != null)
+            {
+                lock (_compoundSymptomPatterns)
+                {
+                    foreach (var (pattern, expansion) in symptomData.CommonPatterns)
+                    {
+                        _compoundSymptomPatterns[pattern] = expansion;
+                        // Also add version without hyphens
+                        var withoutHyphen = pattern.Replace("-", "");
+                        if (!_compoundSymptomPatterns.ContainsKey(withoutHyphen))
+                        {
+                            _compoundSymptomPatterns[withoutHyphen] = expansion;
+                        }
+                    }
+                }
+            }
 
             return symptomData?.Symptoms ?? GetFallbackSymptoms();
         }
@@ -443,13 +481,13 @@ public static class SymptomDictionary
             return;
 
         // Create compound pattern for multiple body parts
-        var compoundPattern = string.Join("", bodyParts.Select(part => $"{part}{side}")) + condition;
-        var expandedFormat = string.Join(" ", bodyParts.Select(part => $"{part}{side}{condition}"));
+        var compoundPattern = string.Join("", bodyParts.Where(part => part != null).Select(part => $"{part}{side}")) + condition;
+        var expandedFormat = string.Join(" ", bodyParts.Where(part => part != null).Select(part => $"{part}{side}{condition}"));
 
         AddCompoundSymptomPattern(compoundPattern, expandedFormat);
 
         // Create hyphenated version
-        var hyphenatedPattern = string.Join("-", bodyParts.Select(part => $"{part}{side}")) + condition;
+        var hyphenatedPattern = string.Join("-", bodyParts.Where(part => part != null).Select(part => $"{part}{side}")) + condition;
         AddCompoundSymptomPattern(hyphenatedPattern, expandedFormat);
 
         // Add individual symptoms to dictionary
