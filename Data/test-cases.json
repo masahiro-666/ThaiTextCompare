@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Thai Medical Text Comparison Test Cases",
+    "totalTestCases": 82,
+    "categories": [
+      "exact-match-variations",
+      "additional-scenarios", 
+      "compound-symptoms",
+      "stress-test-cases",
+      "edge-cases",
+      "mixed-language",
+      "special-characters",
+      "long-concatenated",
+      "duplicates",
+      "typo-corrections",
+      "compound-boundaries",
+      "frequency-cases",
+      "concatenation-extremes",
+      "case-sensitivity",
+      "multiple-extras",
+      "extreme-edge-cases",
+      "verification-tests",
+      "new-test-cases",
+      "conjunction-filtering"
+    ]
+  },
+  "testCases": [
+    {
+      "text1": "ไข้ ไอ เจ็บคอ มีน้ำมูก",
+      "text2": "ไข้ ไอ เจ็บคอ มีน้ำมูก รถยนต์",
+      "description": "Medical symptoms with single non-medical word appended (space-separated)"
+    },
+    {
+      "text1": "ไข้ ไอ เจ็บคอ มีน้ำมูก",
+      "text2": "ไข้ ไอ เจ็บคอ มีน้ำมูก รถยนต์ ปลากระป๋องตราCoSI",
+      "description": "Medical symptoms with multiple non-medical words appended (space-separated)"
+    },
+    {
+      "text1": "ไข้ ไอ เจ็บคอ มีน้ำมูก",
+      "text2": "ไข้ ไอ เจ็บคอ มีน้ำมูกรถยนต์ปลากระป๋องตราCoSI",
+      "description": "Medical symptoms with concatenated non-medical words (no spaces)"
+    },
+    {
+      "text1": "ไข้ ไอ เจ็บคอ มีน้ำมูก",
+      "text2": "ไข้ ไอ เจ็บคอ มีน้ำมูกรถยนต์ปลากระป๋องตราCoSIสีแดง",
+      "description": "Medical symptoms with long concatenated mixed-language noise"
+    },
+    {
+      "text1": "ไข้ ไอ เจ็บคอ มีน้ำมูก",
+      "text2": "ไข้ ไอ เจ็บคอ มีน้ำมูก",
+      "description": "Exact match"
+    },
+    {
+      "text1": "ไข้ และ ไอ",
+      "text2": "ไข้ ไอ",
+      "description": "Medical symptoms with conjunction filtering (และ)"
+    },
+    {
+      "text1": "ปวดหัว หรือ วิงเวียน",
+      "text2": "ปวดหัว วิงเวียน",
+      "description": "Medical symptoms with disjunction filtering (หรือ)"
+    },
+    {
+      "text1": "เจ็บคอ และ มีน้ำมูก แต่ ไม่ไข้",
+      "text2": "เจ็บคอ มีน้ำมูก ไม่ไข้",
+      "description": "Multiple conjunctions filtering (และ, แต่)"
+    }
+  ]
+}

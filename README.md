@@ -345,7 +345,7 @@ This software is for educational and research purposes. Always consult qualified
 
 - 🐛 **Bug Reports**: [Create an Issue](https://github.com/masahiro-666/ThaiTextCompare/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/masahiro-666/ThaiTextCompare/discussions)
-- 📧 **Contact**: [Email](mailto:your-email@example.com)
+- 📧 **Contact**: [Email](kittikanct03@gmail.com)
 
 ---
 

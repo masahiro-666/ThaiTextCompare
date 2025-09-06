@@ -3,6 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace ThaiTextCompare.Core;
 
+/// <summary>
+/// Tokenizes Thai medical text with support for dynamic dictionary and compound patterns
+/// </summary>
 public class ThaiMedicalTokenizer
 {
     private readonly string[] _symptomDict;
@@ -10,14 +13,39 @@ public class ThaiMedicalTokenizer
     private readonly List<string> _sortedDict;
     private readonly Dictionary<string, string> _synonymMappings;
 
+    /// <summary>
+    /// Initializes a new instance of ThaiMedicalTokenizer
+    /// </summary>
+    /// <param name="symptomDict">Array of medical symptoms for tokenization</param>
     public ThaiMedicalTokenizer(string[] symptomDict)
     {
         _symptomDict = symptomDict ?? throw new ArgumentNullException(nameof(symptomDict));
         _dictSet = new HashSet<string>(_symptomDict);
         _sortedDict = _symptomDict.OrderByDescending(d => d.Length).ToList();
-        _synonymMappings = InitializeSynonymMappings();
+        _synonymMappings = SymptomDictionary.LoadSynonymMappingsFromJson();
     }
 
+    /// <summary>
+    /// Creates a tokenizer with dynamic dictionary support
+    /// </summary>
+    public static ThaiMedicalTokenizer CreateWithDynamicDictionary()
+    {
+        return new ThaiMedicalTokenizer(SymptomDictionary.GetCurrentSymptomDict());
+    }
+
+    /// <summary>
+    /// Refreshes the tokenizer with the current dynamic dictionary
+    /// </summary>
+    public ThaiMedicalTokenizer RefreshDictionary()
+    {
+        return new ThaiMedicalTokenizer(SymptomDictionary.GetCurrentSymptomDict());
+    }
+
+    /// <summary>
+    /// Tokenizes Thai medical symptom text into individual symptoms
+    /// </summary>
+    /// <param name="text">Thai medical text to tokenize</param>
+    /// <returns>List of tokenized symptoms</returns>
     public List<string> TokenizeThaiSymptoms(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -26,12 +54,18 @@ public class ThaiMedicalTokenizer
         text = NormalizeSpaces(text);
         text = ExpandCompoundSymptoms(text);
 
+        List<string> tokens;
         if (text.Contains(' ') || text.Contains('-'))
         {
-            return TokenizeSpacedText(text);
+            tokens = TokenizeSpacedText(text);
+        }
+        else
+        {
+            tokens = TokenizeConcatenatedText(text);
         }
 
-        return TokenizeConcatenatedText(text);
+        // Filter out Thai conjunctions and common function words
+        return FilterConjunctions(tokens);
     }
 
     private List<string> TokenizeSpacedText(string text)
@@ -184,6 +218,19 @@ public class ThaiMedicalTokenizer
         return result;
     }
 
+    /// <summary>
+    /// Filters out Thai conjunctions and common function words from the token list
+    /// </summary>
+    /// <param name="tokens">List of tokens to filter</param>
+    /// <returns>Filtered list without conjunctions</returns>
+    private List<string> FilterConjunctions(List<string> tokens)
+    {
+        // Load Thai conjunctions from JSON configuration
+        var conjunctions = new HashSet<string>(SymptomDictionary.LoadConjunctionsFromJson());
+
+        return tokens.Where(token => !conjunctions.Contains(token.Trim())).ToList();
+    }
+
     private Dictionary<char, List<string>> BuildDictionaryLookup()
     {
         var dictLookup = new Dictionary<char, List<string>>();
@@ -287,43 +334,52 @@ public class ThaiMedicalTokenizer
         return segment.ToString();
     }
 
+    /// <summary>
+    /// Determines if a character is in the Thai Unicode range
+    /// </summary>
+    /// <param name="c">Character to check</param>
+    /// <returns>True if character is Thai, false otherwise</returns>
     public static bool IsThaiCharacter(char c)
     {
         return c >= 0x0E00 && c <= 0x0E7F;
     }
 
+    /// <summary>
+    /// Expands compound symptoms using dynamic patterns from JSON configuration
+    /// </summary>
+    /// <param name="text">Text containing compound symptoms</param>
+    /// <returns>Text with expanded compound symptoms</returns>
     public string ExpandCompoundSymptoms(string text)
     {
+        // Apply synonym mappings first
         foreach (var (from, to) in _synonymMappings)
         {
             text = text.Replace(from, to);
         }
 
+        // Remove frequency indicators and parenthetical content
         text = Regex.Replace(text, @"\d+\s*(ครั้ง|ข้าง)", "");
         text = Regex.Replace(text, @"\(.*?\)", "");
         text = text.Trim();
 
-        // Handle compound patterns
-        if (text == "แขนซ้าย-ขาซ้ายอ่อนแรง" || text == "แขนซ้ายขาซ้ายอ่อนแรง")
+        // Apply compound patterns from JSON configuration
+        var compoundPatterns = SymptomDictionary.GetCompoundSymptomPatterns();
+        foreach (var (pattern, expansion) in compoundPatterns)
         {
-            return "แขนซ้ายอ่อนแรง ขาซ้ายอ่อนแรง";
-        }
-        if (text == "ขาซ้าย-แขนซ้ายอ่อนแรง" || text == "ขาซ้ายแขนซ้ายอ่อนแรง")
-        {
-            return "ขาซ้ายอ่อนแรง แขนซ้ายอ่อนแรง";
-        }
-        if (text == "แขนขวา-ขาขวาอ่อนแรง" || text == "แขนขวาขาขวาอ่อนแรง")
-        {
-            return "แขนขวาอ่อนแรง ขาขวาอ่อนแรง";
-        }
-        if (text == "ขาขวา-แขนขวาอ่อนแรง" || text == "ขาขวาแขนขวาอ่อนแรง")
-        {
-            return "ขาขวาอ่อนแรง แขนขวาอ่อนแรง";
+            if (text == pattern)
+            {
+                return expansion;
+            }
         }
 
         return text;
     }
 
+    /// <summary>
+    /// Normalizes spaces and medical abbreviations in text
+    /// </summary>
+    /// <param name="s">Text to normalize</param>
+    /// <returns>Normalized text</returns>
     public string NormalizeSpaces(string s)
     {
         s = s.Trim();
@@ -356,12 +412,7 @@ public class ThaiMedicalTokenizer
 
     private static string NormalizeMedicalAbbreviations(string text)
     {
-        var medicalAbbreviations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            {"bp", "BP"}, {"hr", "HR"}, {"rr", "RR"}, {"pr", "PR"},
-            {"ecg", "ECG"}, {"ekg", "EKG"}, {"ct", "CT"}, {"mri", "MRI"},
-            {"xray", "XRAY"}, {"x-ray", "XRAY"}, {"iv", "IV"}, {"im", "IM"}
-        };
+        var medicalAbbreviations = SymptomDictionary.LoadMedicalAbbreviationsFromJson();
 
         foreach (var (abbrev, normalized) in medicalAbbreviations)
         {
@@ -369,31 +420,5 @@ public class ThaiMedicalTokenizer
         }
 
         return text;
-    }
-
-    private static Dictionary<string, string> InitializeSynonymMappings()
-    {
-        return new Dictionary<string, string>
-        {
-            {"มีน้ำมูก", "น้ำมูก"},
-            {"ปวดศีรษะ", "ปวดหัว"},
-            {"BP ต่ำ", "BPต่ำ"},
-            {"2 ข้าง", "2ข้าง"},
-            {"มีไข้", "ไข้"},
-            {"ปวดศรีษะ", "ปวดศีรษะ"},
-            {"หายใจลำบาด", "หายใจลำบาก"},
-            {"หายใจลำบาค", "หายใจลำบาก"},
-            {"เจ็บคล", "เจ็บคอ"},
-            {"มีน้ำมุก", "มีน้ำมูก"},
-            {"น้ำมุก", "น้ำมูก"},
-            {"อ่อนแรค", "อ่อนแรง"},
-            {"หมดสิต", "หมดสติ"},
-            {"หกล้น", "หกล้ม"},
-            {"ผื่นขึน", "ผื่นขึ้น"},
-            {"เหงือออก", "เหงื่อออก"},
-            {"ถ่ายเหลอ", "ถ่ายเหลว"},
-            {"วิงเวียน", "หน้ามืด"},
-            {"เวียนหัว", "หน้ามืด"}
-        };
     }
 }
