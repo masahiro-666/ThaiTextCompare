@@ -1,8 +1,11 @@
 ﻿
+using System;
+using System.IO;
+using System.Linq;
 using ThaiTextCompare.Core;
 using System.Text.Json;
 
-class Program
+partial class Program
 {
     public class TestCase
     {
@@ -13,7 +16,7 @@ class Program
 
     public class TestCasesData
     {
-        public object metadata { get; set; } = new();
+        public object metadata { get; set; } = new object();
         public TestCase[] testCases { get; set; } = Array.Empty<TestCase>();
     }
 

@@ -1,429 +1,486 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ThaiTextCompare.Core;
-
-/// <summary>
-/// Tokenizes Thai medical text with support for dynamic dictionary and compound patterns
-/// </summary>
-public class ThaiMedicalTokenizer
+namespace ThaiTextCompare.Core
 {
-    private readonly string[] _symptomDict;
-    private readonly HashSet<string> _dictSet;
-    private readonly List<string> _sortedDict;
-    private readonly Dictionary<string, string> _synonymMappings;
-
     /// <summary>
-    /// Initializes a new instance of ThaiMedicalTokenizer
+    /// Tokenizes Thai medical text with support for dynamic dictionary and compound patterns
     /// </summary>
-    /// <param name="symptomDict">Array of medical symptoms for tokenization</param>
-    public ThaiMedicalTokenizer(string[] symptomDict)
+    public class ThaiMedicalTokenizer
     {
-        _symptomDict = symptomDict ?? throw new ArgumentNullException(nameof(symptomDict));
-        _dictSet = new HashSet<string>(_symptomDict);
-        _sortedDict = _symptomDict.OrderByDescending(d => d.Length).ToList();
-        _synonymMappings = SymptomDictionary.LoadSynonymMappingsFromJson();
-    }
+        private readonly string[] _symptomDict;
+        private readonly HashSet<string> _dictSet;
+        private readonly List<string> _sortedDict;
+        private readonly Dictionary<string, string> _synonymMappings;
 
-    /// <summary>
-    /// Creates a tokenizer with dynamic dictionary support
-    /// </summary>
-    public static ThaiMedicalTokenizer CreateWithDynamicDictionary()
-    {
-        return new ThaiMedicalTokenizer(SymptomDictionary.GetCurrentSymptomDict());
-    }
-
-    /// <summary>
-    /// Refreshes the tokenizer with the current dynamic dictionary
-    /// </summary>
-    public ThaiMedicalTokenizer RefreshDictionary()
-    {
-        return new ThaiMedicalTokenizer(SymptomDictionary.GetCurrentSymptomDict());
-    }
-
-    /// <summary>
-    /// Tokenizes Thai medical symptom text into individual symptoms
-    /// </summary>
-    /// <param name="text">Thai medical text to tokenize</param>
-    /// <returns>List of tokenized symptoms</returns>
-    public List<string> TokenizeThaiSymptoms(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            return new List<string>();
-
-        text = NormalizeSpaces(text);
-        text = ExpandCompoundSymptoms(text);
-
-        List<string> tokens;
-        if (text.Contains(' ') || text.Contains('-'))
+        /// <summary>
+        /// Initializes a new instance of ThaiMedicalTokenizer
+        /// </summary>
+        /// <param name="symptomDict">Array of medical symptoms for tokenization</param>
+        public ThaiMedicalTokenizer(string[] symptomDict)
         {
-            tokens = TokenizeSpacedText(text);
-        }
-        else
-        {
-            tokens = TokenizeConcatenatedText(text);
+            _symptomDict = symptomDict ?? throw new ArgumentNullException(nameof(symptomDict));
+            _dictSet = new HashSet<string>(_symptomDict);
+            _sortedDict = _symptomDict.OrderByDescending(d => d.Length).ToList();
+            _synonymMappings = SymptomDictionary.LoadSynonymMappingsFromJson();
         }
 
-        // Filter out Thai conjunctions and common function words
-        return FilterConjunctions(tokens);
-    }
-
-    private List<string> TokenizeSpacedText(string text)
-    {
-        var words = text.Split(new char[] { ' ', '-' }, StringSplitOptions.RemoveEmptyEntries);
-        var result = new List<string>();
-
-        foreach (var word in words)
+        /// <summary>
+        /// Creates a tokenizer with dynamic dictionary support
+        /// </summary>
+        public static ThaiMedicalTokenizer CreateWithDynamicDictionary()
         {
-            var normalizedWord = NormalizeWord(word);
-            if (_dictSet.Contains(normalizedWord))
+            return new ThaiMedicalTokenizer(SymptomDictionary.GetCurrentSymptomDict());
+        }
+
+        /// <summary>
+        /// Refreshes the tokenizer with the current dynamic dictionary
+        /// </summary>
+        public ThaiMedicalTokenizer RefreshDictionary()
+        {
+            return new ThaiMedicalTokenizer(SymptomDictionary.GetCurrentSymptomDict());
+        }
+
+        /// <summary>
+        /// Tokenizes Thai medical symptom text into individual symptoms
+        /// </summary>
+        /// <param name="text">Thai medical text to tokenize</param>
+        /// <returns>List of tokenized symptoms</returns>
+        public List<string> TokenizeThaiSymptoms(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return new List<string>();
+
+            text = NormalizeSpaces(text);
+            text = ExpandCompoundSymptoms(text);
+
+            List<string> tokens;
+            if (text.Contains(' ') || text.Contains('-'))
             {
-                result.Add(normalizedWord);
+                tokens = TokenizeSpacedText(text);
             }
             else
             {
-                // Enhanced typo detection - try multiple approaches
-                var bestMatch = FindBestFuzzyMatch(normalizedWord);
-                if (bestMatch != null)
+                tokens = TokenizeConcatenatedText(text);
+            }
+
+            // Filter out Thai conjunctions and common function words
+            tokens = FilterConjunctions(tokens);
+
+            // Process negation patterns to create negated symptoms
+            tokens = ProcessNegationPatterns(tokens);
+
+            return tokens;
+        }
+
+        private List<string> TokenizeSpacedText(string text)
+        {
+            var words = text.Split(new char[] { ' ', '-' }, StringSplitOptions.RemoveEmptyEntries);
+            var result = new List<string>();
+
+            foreach (var word in words)
+            {
+                var normalizedWord = NormalizeWord(word);
+                if (_dictSet.Contains(normalizedWord))
                 {
-                    result.Add(bestMatch);
+                    result.Add(normalizedWord);
                 }
                 else
                 {
-                    // Try partial matching for compound words
-                    var matches = _dictSet.Where(d => normalizedWord.Contains(d)).ToList();
-                    if (matches.Any())
+                    // Enhanced typo detection - try multiple approaches
+                    var bestMatch = FindBestFuzzyMatch(normalizedWord);
+                    if (bestMatch != null)
                     {
-                        if (matches.Any(m => m != normalizedWord))
-                        {
-                            var subTokens = ParseConcatenatedWord(normalizedWord);
-                            result.AddRange(subTokens);
-                        }
-                        else
-                        {
-                            var longestMatch = matches.OrderByDescending(m => m.Length).First();
-                            if (!result.Contains(longestMatch))
-                            {
-                                result.Add(longestMatch);
-                            }
-                        }
+                        result.Add(bestMatch);
                     }
                     else
                     {
-                        // Last resort: try to parse as concatenated word or add as-is for unknown terms
-                        var subTokens = ParseConcatenatedWord(normalizedWord);
-                        if (subTokens.Any(t => _dictSet.Contains(t)))
+                        // Try partial matching for compound words
+                        var matches = _dictSet.Where(d => normalizedWord.Contains(d)).ToList();
+                        if (matches.Any())
                         {
-                            result.AddRange(subTokens);
+                            if (matches.Any(m => m != normalizedWord))
+                            {
+                                var subTokens = ParseConcatenatedWord(normalizedWord);
+                                result.AddRange(subTokens);
+                            }
+                            else
+                            {
+                                var longestMatch = matches.OrderByDescending(m => m.Length).First();
+                                if (!result.Contains(longestMatch))
+                                {
+                                    result.Add(longestMatch);
+                                }
+                            }
                         }
                         else
                         {
-                            // Keep the original word if no matches found
-                            result.Add(normalizedWord);
+                            // Last resort: try to parse as concatenated word or add as-is for unknown terms
+                            var subTokens = ParseConcatenatedWord(normalizedWord);
+                            if (subTokens.Any(t => _dictSet.Contains(t)))
+                            {
+                                result.AddRange(subTokens);
+                            }
+                            else
+                            {
+                                // Keep the original word if no matches found
+                                result.Add(normalizedWord);
+                            }
                         }
                     }
                 }
             }
+
+            return result;
         }
 
-        return result;
-    }
-
-    private List<string> TokenizeConcatenatedText(string text)
-    {
-        if (text.Length > 500)
+        private List<string> TokenizeConcatenatedText(string text)
         {
-            return OptimizedConcatenatedParsing(text);
+            if (text.Length > 500)
+            {
+                return OptimizedConcatenatedParsing(text);
+            }
+
+            return ParseConcatenatedWord(text);
         }
 
-        return ParseConcatenatedWord(text);
-    }
-
-    private List<string> ParseConcatenatedWord(string word)
-    {
-        var result = new List<string>();
-        int i = 0;
-
-        while (i < word.Length)
+        private List<string> ParseConcatenatedWord(string word)
         {
-            string? hit = null;
-            foreach (var term in _sortedDict)
+            var result = new List<string>();
+            int i = 0;
+
+            while (i < word.Length)
             {
-                if (i + term.Length <= word.Length &&
-                    string.CompareOrdinal(word, i, term, 0, term.Length) == 0)
+                string? hit = null;
+                foreach (var term in _sortedDict)
                 {
-                    hit = term;
-                    break;
-                }
-            }
-
-            if (hit != null)
-            {
-                result.Add(hit);
-                i += hit.Length;
-            }
-            else
-            {
-                var nonDictSegment = ExtractNonDictionarySegment(word, i);
-                if (!string.IsNullOrEmpty(nonDictSegment))
-                {
-                    result.Add(nonDictSegment);
-                    i += nonDictSegment.Length;
-                }
-                else
-                {
-                    result.Add(word.Substring(i, 1));
-                    i++;
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private List<string> OptimizedConcatenatedParsing(string text)
-    {
-        var result = new List<string>();
-        var dictLookup = BuildDictionaryLookup();
-        int i = 0;
-
-        while (i < text.Length)
-        {
-            string? hit = null;
-            char currentChar = text[i];
-
-            if (dictLookup.ContainsKey(currentChar))
-            {
-                foreach (var term in dictLookup[currentChar])
-                {
-                    if (i + term.Length <= text.Length &&
-                        string.CompareOrdinal(text, i, term, 0, term.Length) == 0)
+                    if (i + term.Length <= word.Length &&
+                        string.CompareOrdinal(word, i, term, 0, term.Length) == 0)
                     {
                         hit = term;
                         break;
                     }
                 }
-            }
 
-            if (hit != null)
-            {
-                result.Add(hit);
-                i += hit.Length;
-            }
-            else
-            {
-                var segment = ExtractNonDictionarySegment(text, i);
-                if (!string.IsNullOrEmpty(segment))
+                if (hit != null)
                 {
-                    result.Add(segment);
-                    i += segment.Length;
+                    result.Add(hit);
+                    i += hit.Length;
                 }
                 else
                 {
-                    result.Add(text.Substring(i, 1));
-                    i++;
+                    var nonDictSegment = ExtractNonDictionarySegment(word, i);
+                    if (!string.IsNullOrEmpty(nonDictSegment))
+                    {
+                        result.Add(nonDictSegment);
+                        i += nonDictSegment.Length;
+                    }
+                    else
+                    {
+                        result.Add(word.Substring(i, 1));
+                        i++;
+                    }
                 }
             }
+
+            return result;
         }
 
-        return result;
-    }
-
-    /// <summary>
-    /// Filters out Thai conjunctions and common function words from the token list
-    /// </summary>
-    /// <param name="tokens">List of tokens to filter</param>
-    /// <returns>Filtered list without conjunctions</returns>
-    private List<string> FilterConjunctions(List<string> tokens)
-    {
-        // Load Thai conjunctions from JSON configuration
-        var conjunctions = new HashSet<string>(SymptomDictionary.LoadConjunctionsFromJson());
-
-        return tokens.Where(token => !conjunctions.Contains(token.Trim())).ToList();
-    }
-
-    private Dictionary<char, List<string>> BuildDictionaryLookup()
-    {
-        var dictLookup = new Dictionary<char, List<string>>();
-        foreach (var term in _sortedDict)
+        private List<string> OptimizedConcatenatedParsing(string text)
         {
-            if (term.Length > 0)
+            var result = new List<string>();
+            var dictLookup = BuildDictionaryLookup();
+            int i = 0;
+
+            while (i < text.Length)
             {
-                char firstChar = term[0];
-                if (!dictLookup.ContainsKey(firstChar))
+                string? hit = null;
+                char currentChar = text[i];
+
+                if (dictLookup.ContainsKey(currentChar))
                 {
-                    dictLookup[firstChar] = new List<string>();
+                    foreach (var term in dictLookup[currentChar])
+                    {
+                        if (i + term.Length <= text.Length &&
+                            string.CompareOrdinal(text, i, term, 0, term.Length) == 0)
+                        {
+                            hit = term;
+                            break;
+                        }
+                    }
                 }
-                dictLookup[firstChar].Add(term);
+
+                if (hit != null)
+                {
+                    result.Add(hit);
+                    i += hit.Length;
+                }
+                else
+                {
+                    var segment = ExtractNonDictionarySegment(text, i);
+                    if (!string.IsNullOrEmpty(segment))
+                    {
+                        result.Add(segment);
+                        i += segment.Length;
+                    }
+                    else
+                    {
+                        result.Add(text.Substring(i, 1));
+                        i++;
+                    }
+                }
             }
+
+            return result;
         }
-        return dictLookup;
-    }
 
-    private string? FindBestFuzzyMatch(string word)
-    {
-        if (word.Length < 3) return null;
-
-        var candidates = _dictSet
-            .Where(d => Math.Abs(d.Length - word.Length) <= 2)
-            .Where(d => CalculateSimilarity(word, d) >= 0.7)
-            .OrderByDescending(d => CalculateSimilarity(word, d))
-            .ToList();
-
-        return candidates.FirstOrDefault();
-    }
-
-    /// <summary>
-    /// Calculates Levenshtein distance between two strings for more accurate typo detection
-    /// </summary>
-    /// <param name="s1">First string</param>
-    /// <param name="s2">Second string</param>
-    /// <returns>Levenshtein distance</returns>
-    private static int CalculateLevenshteinDistance(string s1, string s2)
-    {
-        if (string.IsNullOrEmpty(s1)) return s2?.Length ?? 0;
-        if (string.IsNullOrEmpty(s2)) return s1.Length;
-
-        int[,] matrix = new int[s1.Length + 1, s2.Length + 1];
-
-        // Initialize first row and column
-        for (int i = 0; i <= s1.Length; i++) matrix[i, 0] = i;
-        for (int j = 0; j <= s2.Length; j++) matrix[0, j] = j;
-
-        // Fill the matrix
-        for (int i = 1; i <= s1.Length; i++)
+        /// <summary>
+        /// Filters out Thai conjunctions and common function words from the token list
+        /// </summary>
+        /// <param name="tokens">List of tokens to filter</param>
+        /// <returns>Filtered list without conjunctions</returns>
+        private List<string> FilterConjunctions(List<string> tokens)
         {
-            for (int j = 1; j <= s2.Length; j++)
+            // Load Thai conjunctions from JSON configuration
+            var conjunctions = new HashSet<string>(SymptomDictionary.LoadConjunctionsFromJson());
+
+            return tokens.Where(token => !conjunctions.Contains(token.Trim())).ToList();
+        }
+
+        /// <summary>
+        /// Processes negation patterns in Thai medical text to create negated symptoms
+        /// Converts patterns like "ไม่ ไข้" to "ไม่ไข้" or "!ไข้"
+        /// </summary>
+        /// <param name="tokens">List of tokens to process</param>
+        /// <returns>List with processed negation patterns</returns>
+        private List<string> ProcessNegationPatterns(List<string> tokens)
+        {
+            if (tokens == null || tokens.Count < 2)
+                return tokens ?? new List<string>();
+
+            var result = new List<string>();
+            var negationWords = new HashSet<string> { "ไม่", "ไม่มี", "ไม่ได้", "หยุด", "ลด" };
+
+            for (int i = 0; i < tokens.Count; i++)
             {
-                int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
-                matrix[i, j] = Math.Min(
-                    Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
-                    matrix[i - 1, j - 1] + cost
-                );
+                var currentToken = tokens[i];
+
+                // Check if current token is a negation word and there's a next token
+                if (negationWords.Contains(currentToken) && i + 1 < tokens.Count)
+                {
+                    var nextToken = tokens[i + 1];
+
+                    // Check if the next token is a medical symptom (exists in dictionary)
+                    if (_dictSet.Contains(nextToken))
+                    {
+                        // Create negated symptom by combining negation + symptom
+                        var negatedSymptom = currentToken + nextToken;
+                        result.Add(negatedSymptom);
+
+                        // Skip the next token since we've combined it
+                        i++;
+                    }
+                    else
+                    {
+                        // If next token is not a medical symptom, keep negation word as is
+                        result.Add(currentToken);
+                    }
+                }
+                else
+                {
+                    // Regular token, add as is
+                    result.Add(currentToken);
+                }
             }
+
+            return result;
         }
 
-        return matrix[s1.Length, s2.Length];
-    }
-
-    private static double CalculateSimilarity(string s1, string s2)
-    {
-        if (string.IsNullOrEmpty(s1) || string.IsNullOrEmpty(s2)) return 0;
-        if (s1 == s2) return 1;
-
-        var chars1 = new HashSet<char>(s1);
-        var chars2 = new HashSet<char>(s2);
-
-        var intersection = chars1.Intersect(chars2).Count();
-        var union = chars1.Union(chars2).Count();
-
-        return union == 0 ? 0 : (double)intersection / union;
-    }
-
-    private string ExtractNonDictionarySegment(string word, int startIndex)
-    {
-        int i = startIndex;
-        var segment = new StringBuilder();
-
-        while (i < word.Length)
+        private Dictionary<char, List<string>> BuildDictionaryLookup()
         {
-            bool foundDictWordAtI = false;
+            var dictLookup = new Dictionary<char, List<string>>();
             foreach (var term in _sortedDict)
             {
-                if (i + term.Length <= word.Length &&
-                    string.CompareOrdinal(word, i, term, 0, term.Length) == 0)
+                if (term.Length > 0)
                 {
-                    foundDictWordAtI = true;
+                    char firstChar = term[0];
+                    if (!dictLookup.ContainsKey(firstChar))
+                    {
+                        dictLookup[firstChar] = new List<string>();
+                    }
+                    dictLookup[firstChar].Add(term);
+                }
+            }
+            return dictLookup;
+        }
+
+        private string? FindBestFuzzyMatch(string word)
+        {
+            if (word.Length < 3) return null;
+
+            var candidates = _dictSet
+                .Where(d => Math.Abs(d.Length - word.Length) <= 2)
+                .Where(d => CalculateSimilarity(word, d) >= 0.7)
+                .OrderByDescending(d => CalculateSimilarity(word, d))
+                .ToList();
+
+            return candidates.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Calculates Levenshtein distance between two strings for more accurate typo detection
+        /// </summary>
+        /// <param name="s1">First string</param>
+        /// <param name="s2">Second string</param>
+        /// <returns>Levenshtein distance</returns>
+        private static int CalculateLevenshteinDistance(string s1, string s2)
+        {
+            if (string.IsNullOrEmpty(s1)) return s2?.Length ?? 0;
+            if (string.IsNullOrEmpty(s2)) return s1.Length;
+
+            int[,] matrix = new int[s1.Length + 1, s2.Length + 1];
+
+            // Initialize first row and column
+            for (int i = 0; i <= s1.Length; i++) matrix[i, 0] = i;
+            for (int j = 0; j <= s2.Length; j++) matrix[0, j] = j;
+
+            // Fill the matrix
+            for (int i = 1; i <= s1.Length; i++)
+            {
+                for (int j = 1; j <= s2.Length; j++)
+                {
+                    int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+                    matrix[i, j] = Math.Min(
+                        Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
+                        matrix[i - 1, j - 1] + cost
+                    );
+                }
+            }
+
+            return matrix[s1.Length, s2.Length];
+        }
+
+        private static double CalculateSimilarity(string s1, string s2)
+        {
+            if (string.IsNullOrEmpty(s1) || string.IsNullOrEmpty(s2)) return 0;
+            if (s1 == s2) return 1;
+
+            var chars1 = new HashSet<char>(s1);
+            var chars2 = new HashSet<char>(s2);
+
+            var intersection = chars1.Intersect(chars2).Count();
+            var union = chars1.Union(chars2).Count();
+
+            return union == 0 ? 0 : (double)intersection / union;
+        }
+
+        private string ExtractNonDictionarySegment(string word, int startIndex)
+        {
+            int i = startIndex;
+            var segment = new StringBuilder();
+
+            while (i < word.Length)
+            {
+                bool foundDictWordAtI = false;
+                foreach (var term in _sortedDict)
+                {
+                    if (i + term.Length <= word.Length &&
+                        string.CompareOrdinal(word, i, term, 0, term.Length) == 0)
+                    {
+                        foundDictWordAtI = true;
+                        break;
+                    }
+                }
+
+                if (foundDictWordAtI)
+                {
                     break;
                 }
-            }
 
-            if (foundDictWordAtI)
-            {
-                break;
-            }
+                char currentChar = word[i];
+                segment.Append(currentChar);
 
-            char currentChar = word[i];
-            segment.Append(currentChar);
-
-            if (segment.Length > 0)
-            {
-                if (i + 1 < word.Length)
+                if (segment.Length > 0)
                 {
-                    char nextChar = word[i + 1];
-
-                    if (IsThaiCharacter(currentChar) && !IsThaiCharacter(nextChar))
+                    if (i + 1 < word.Length)
                     {
-                        i++;
-                        break;
-                    }
+                        char nextChar = word[i + 1];
 
-                    if (!IsThaiCharacter(currentChar) && IsThaiCharacter(nextChar))
-                    {
-                        i++;
-                        break;
-                    }
+                        if (IsThaiCharacter(currentChar) && !IsThaiCharacter(nextChar))
+                        {
+                            i++;
+                            break;
+                        }
 
-                    if (segment.Length >= 50)
-                    {
-                        i++;
-                        break;
+                        if (!IsThaiCharacter(currentChar) && IsThaiCharacter(nextChar))
+                        {
+                            i++;
+                            break;
+                        }
+
+                        if (segment.Length >= 50)
+                        {
+                            i++;
+                            break;
+                        }
                     }
+                }
+
+                i++;
+            }
+
+            return segment.ToString();
+        }
+
+        /// <summary>
+        /// Determines if a character is in the Thai Unicode range
+        /// </summary>
+        /// <param name="c">Character to check</param>
+        /// <returns>True if character is Thai, false otherwise</returns>
+        public static bool IsThaiCharacter(char c)
+        {
+            return c >= 0x0E00 && c <= 0x0E7F;
+        }
+
+        /// <summary>
+        /// Expands compound symptoms using dynamic patterns from JSON configuration
+        /// </summary>
+        /// <param name="text">Text containing compound symptoms</param>
+        /// <returns>Text with expanded compound symptoms</returns>
+        public string ExpandCompoundSymptoms(string text)
+        {
+            // Apply synonym mappings first
+            foreach (var kvp in _synonymMappings)
+            {
+                text = text.Replace(kvp.Key, kvp.Value);
+            }
+
+            // Remove frequency indicators and parenthetical content
+            text = Regex.Replace(text, @"\d+\s*(ครั้ง|ข้าง)", "");
+            text = Regex.Replace(text, @"\(.*?\)", "");
+            text = text.Trim();
+
+            // Apply compound patterns from JSON configuration
+            var compoundPatterns = SymptomDictionary.GetCompoundSymptomPatterns();
+
+            foreach (var kvp in compoundPatterns)
+            {
+                if (text == kvp.Key)
+                {
+                    return kvp.Value;
+                }
+                // Also check if the pattern is contained within the text and replace it
+                else if (text.Contains(kvp.Key))
+                {
+                    text = text.Replace(kvp.Key, kvp.Value);
                 }
             }
 
-            i++;
-        }
-
-        return segment.ToString();
-    }
-
-    /// <summary>
-    /// Determines if a character is in the Thai Unicode range
-    /// </summary>
-    /// <param name="c">Character to check</param>
-    /// <returns>True if character is Thai, false otherwise</returns>
-    public static bool IsThaiCharacter(char c)
-    {
-        return c >= 0x0E00 && c <= 0x0E7F;
-    }
-
-    /// <summary>
-    /// Expands compound symptoms using dynamic patterns from JSON configuration
-    /// </summary>
-    /// <param name="text">Text containing compound symptoms</param>
-    /// <returns>Text with expanded compound symptoms</returns>
-    public string ExpandCompoundSymptoms(string text)
-    {
-        // Apply synonym mappings first
-        foreach (var (from, to) in _synonymMappings)
-        {
-            text = text.Replace(from, to);
-        }
-
-        // Remove frequency indicators and parenthetical content
-        text = Regex.Replace(text, @"\d+\s*(ครั้ง|ข้าง)", "");
-        text = Regex.Replace(text, @"\(.*?\)", "");
-        text = text.Trim();
-
-        // Apply compound patterns from JSON configuration
-        var compoundPatterns = SymptomDictionary.GetCompoundSymptomPatterns();
-
-        foreach (var (pattern, expansion) in compoundPatterns)
-        {
-            if (text == pattern)
-            {
-                return expansion;
-            }
-            // Also check if the pattern is contained within the text and replace it
-            else if (text.Contains(pattern))
-            {
-                text = text.Replace(pattern, expansion);
-            }
-        }
-
-        // Fallback patterns if JSON loading fails
-        var fallbackPatterns = new Dictionary<string, string>
+            // Fallback patterns if JSON loading fails
+            var fallbackPatterns = new Dictionary<string, string>
         {
             { "แขนซ้าย-ขาซ้ายอ่อนแรง", "แขนซ้ายอ่อนแรง ขาซ้ายอ่อนแรง" },
             { "แขนซ้ายขาซ้ายอ่อนแรง", "แขนซ้ายอ่อนแรง ขาซ้ายอ่อนแรง" },
@@ -435,133 +492,134 @@ public class ThaiMedicalTokenizer
             { "ขาขวาแขนขวาอ่อนแรง", "ขาขวาอ่อนแรง แขนขวาอ่อนแรง" }
         };
 
-        foreach (var (pattern, expansion) in fallbackPatterns)
-        {
-            if (text == pattern)
+            foreach (var kvp in fallbackPatterns)
             {
-                return expansion;
+                if (text == kvp.Key)
+                {
+                    return kvp.Value;
+                }
+                else if (text.Contains(kvp.Key))
+                {
+                    text = text.Replace(kvp.Key, kvp.Value);
+                }
             }
-            else if (text.Contains(pattern))
-            {
-                text = text.Replace(pattern, expansion);
-            }
+
+            return text;
         }
 
-        return text;
-    }
-
-    /// <summary>
-    /// Gets typo correction suggestions for a given word
-    /// </summary>
-    /// <param name="word">Word to check for typos</param>
-    /// <returns>Dictionary of correction type and suggested corrections</returns>
-    public Dictionary<string, List<string>> GetTypoSuggestions(string word)
-    {
-        var suggestions = new Dictionary<string, List<string>>
+        /// <summary>
+        /// Gets typo correction suggestions for a given word
+        /// </summary>
+        /// <param name="word">Word to check for typos</param>
+        /// <returns>Dictionary of correction type and suggested corrections</returns>
+        public Dictionary<string, List<string>> GetTypoSuggestions(string word)
         {
-            ["exact_match"] = new List<string>(),
-            ["character_substitution"] = new List<string>(),
-            ["missing_character"] = new List<string>(),
-            ["extra_character"] = new List<string>(),
-            ["fuzzy_match"] = new List<string>()
-        };
+            var suggestions = new Dictionary<string, List<string>>
+            {
+                ["exact_match"] = new List<string>(),
+                ["character_substitution"] = new List<string>(),
+                ["missing_character"] = new List<string>(),
+                ["extra_character"] = new List<string>(),
+                ["fuzzy_match"] = new List<string>()
+            };
 
-        var normalizedWord = NormalizeWord(word);
+            var normalizedWord = NormalizeWord(word);
 
-        // Check for exact match first
-        if (_dictSet.Contains(normalizedWord))
-        {
-            suggestions["exact_match"].Add(normalizedWord);
+            // Check for exact match first
+            if (_dictSet.Contains(normalizedWord))
+            {
+                suggestions["exact_match"].Add(normalizedWord);
+                return suggestions;
+            }
+
+            // Missing character suggestions
+            foreach (var dictWord in _dictSet.Where(d => d.Length == normalizedWord.Length + 1))
+            {
+                for (int i = 0; i <= normalizedWord.Length; i++)
+                {
+                    string withInsertion = normalizedWord.Substring(0, i) + dictWord[i] + normalizedWord.Substring(i);
+                    if (withInsertion == dictWord)
+                    {
+                        suggestions["missing_character"].Add(dictWord);
+                        break;
+                    }
+                }
+            }
+
+            // Extra character suggestions
+            foreach (var dictWord in _dictSet.Where(d => d.Length == normalizedWord.Length - 1))
+            {
+                for (int i = 0; i < normalizedWord.Length; i++)
+                {
+                    string withDeletion = normalizedWord.Substring(0, i) + normalizedWord.Substring(i + 1);
+                    if (withDeletion == dictWord)
+                    {
+                        suggestions["extra_character"].Add(dictWord);
+                        break;
+                    }
+                }
+            }
+
+            // Fuzzy matches using Levenshtein distance
+            var fuzzyMatches = _dictSet
+                .Where(d => Math.Abs(d.Length - normalizedWord.Length) <= 2)
+                .Where(d => CalculateLevenshteinDistance(normalizedWord, d) <= 2)
+                .Where(d => CalculateSimilarity(normalizedWord, d) >= 0.6)
+                .OrderBy(d => CalculateLevenshteinDistance(normalizedWord, d))
+                .ThenByDescending(d => CalculateSimilarity(normalizedWord, d))
+                .Take(5)
+                .ToList();
+
+            suggestions["fuzzy_match"].AddRange(fuzzyMatches);
+
             return suggestions;
         }
 
-        // Missing character suggestions
-        foreach (var dictWord in _dictSet.Where(d => d.Length == normalizedWord.Length + 1))
+        /// <summary>
+        /// Normalizes spaces and medical abbreviations in text
+        /// </summary>
+        /// <param name="s">Text to normalize</param>
+        /// <returns>Normalized text</returns>
+        public string NormalizeSpaces(string s)
         {
-            for (int i = 0; i <= normalizedWord.Length; i++)
+            s = s.Trim();
+            s = Regex.Replace(s, @"\s+", " ");
+            s = NormalizeMedicalAbbreviations(s);
+            return s;
+        }
+
+        private string NormalizeWord(string word)
+        {
+            // For Thai text, don't normalize case
+            if (word.Any(IsThaiCharacter))
             {
-                string withInsertion = normalizedWord.Substring(0, i) + dictWord[i] + normalizedWord.Substring(i);
-                if (withInsertion == dictWord)
-                {
-                    suggestions["missing_character"].Add(dictWord);
-                    break;
-                }
+                return word;
             }
-        }
 
-        // Extra character suggestions
-        foreach (var dictWord in _dictSet.Where(d => d.Length == normalizedWord.Length - 1))
-        {
-            for (int i = 0; i < normalizedWord.Length; i++)
+            // For English words, normalize case to lowercase for comparison
+            // But preserve the original casing for display
+            var lowercaseWord = word.ToLowerInvariant();
+
+            // If it's a medical abbreviation, it will be normalized by NormalizeMedicalAbbreviations
+            var normalizedAbbrev = NormalizeMedicalAbbreviations(word);
+            if (normalizedAbbrev != word)
             {
-                string withDeletion = normalizedWord.Substring(0, i) + normalizedWord.Substring(i + 1);
-                if (withDeletion == dictWord)
-                {
-                    suggestions["extra_character"].Add(dictWord);
-                    break;
-                }
+                return normalizedAbbrev;
             }
+
+            return lowercaseWord;
         }
 
-        // Fuzzy matches using Levenshtein distance
-        var fuzzyMatches = _dictSet
-            .Where(d => Math.Abs(d.Length - normalizedWord.Length) <= 2)
-            .Where(d => CalculateLevenshteinDistance(normalizedWord, d) <= 2)
-            .Where(d => CalculateSimilarity(normalizedWord, d) >= 0.6)
-            .OrderBy(d => CalculateLevenshteinDistance(normalizedWord, d))
-            .ThenByDescending(d => CalculateSimilarity(normalizedWord, d))
-            .Take(5)
-            .ToList();
-
-        suggestions["fuzzy_match"].AddRange(fuzzyMatches);
-
-        return suggestions;
-    }
-
-    /// <summary>
-    /// Normalizes spaces and medical abbreviations in text
-    /// </summary>
-    /// <param name="s">Text to normalize</param>
-    /// <returns>Normalized text</returns>
-    public string NormalizeSpaces(string s)
-    {
-        s = s.Trim();
-        s = Regex.Replace(s, @"\s+", " ");
-        s = NormalizeMedicalAbbreviations(s);
-        return s;
-    }
-
-    private string NormalizeWord(string word)
-    {
-        // For Thai text, don't normalize case
-        if (word.Any(IsThaiCharacter))
+        private static string NormalizeMedicalAbbreviations(string text)
         {
-            return word;
+            var medicalAbbreviations = SymptomDictionary.LoadMedicalAbbreviationsFromJson();
+
+            foreach (var kvp in medicalAbbreviations)
+            {
+                text = Regex.Replace(text, $@"\b{Regex.Escape(kvp.Key)}\b", kvp.Value, RegexOptions.IgnoreCase);
+            }
+
+            return text;
         }
-
-        // For English words, normalize case to lowercase for comparison
-        // But preserve the original casing for display
-        var lowercaseWord = word.ToLowerInvariant();
-
-        // If it's a medical abbreviation, it will be normalized by NormalizeMedicalAbbreviations
-        var normalizedAbbrev = NormalizeMedicalAbbreviations(word);
-        if (normalizedAbbrev != word)
-        {
-            return normalizedAbbrev;
-        }
-
-        return lowercaseWord;
-    }
-
-    private static string NormalizeMedicalAbbreviations(string text)
-    {
-        var medicalAbbreviations = SymptomDictionary.LoadMedicalAbbreviationsFromJson();
-
-        foreach (var (abbrev, normalized) in medicalAbbreviations)
-        {
-            text = Regex.Replace(text, $@"\b{Regex.Escape(abbrev)}\b", normalized, RegexOptions.IgnoreCase);
-        }
-
-        return text;
     }
 }
