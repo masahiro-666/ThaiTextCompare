@@ -7,8 +7,8 @@ The Thai Medical Text Compare system now uses a JSON file to store its default s
 ## JSON File Location
 
 - **File**: `Data/default-symptoms.json`
-- **Purpose**: Stores the default medical symptom dictionary
-- **Format**: Structured JSON with symptoms, synonyms, and metadata
+- **Purpose**: Stores the default medical symptom dictionary with Thai conjunctions and synonyms
+- **Format**: Structured JSON with symptoms, synonyms, conjunctions, and metadata
 
 ## JSON Structure
 
@@ -19,9 +19,20 @@ The Thai Medical Text Compare system now uses a JSON file to store its default s
     "ปวดหัว": "ปวดศีรษะ",
     "น้ำมูก": "มีน้ำมูก"
   },
+  "conjunctions": [
+    "และ",
+    "หรือ",
+    "แต่",
+    "เพราะ",
+    "เพื่อ",
+    "จาก",
+    "ใน",
+    "บน",
+    "..."
+  ],
   "metadata": {
     "version": "1.0",
-    "description": "Default Thai medical symptom dictionary",
+    "description": "Default Thai medical symptom dictionary with conjunctions",
     "lastUpdated": "2025-09-06"
   }
 }

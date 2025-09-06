@@ -42,7 +42,7 @@ Tests/
 
 ## 🧪 Test Types Implemented
 
-### 1. Unit Tests (95+ tests)
+### 1. Unit Tests (82+ tests)
 
 **ThaiMedicalTokenizerTests**
 
@@ -53,6 +53,7 @@ Tests/
 - ✅ Typo correction
 - ✅ Compound symptom expansion
 - ✅ Mixed language handling
+- ✅ Conjunction filtering (Thai function words)
 - ✅ Performance optimization triggers
 
 **ComparisonEngineTests**
@@ -163,6 +164,7 @@ dotnet run --project Tests/Performance/BenchmarkTests.cs --configuration Release
 - [x] Synonym recognition
 - [x] Typo correction
 - [x] Compound symptom expansion
+- [x] Thai conjunction filtering (และ, หรือ, แต่, etc.)
 
 ### ✅ Edge Cases
 
@@ -263,6 +265,7 @@ dotnet run --project Tests/Performance/BenchmarkTests.cs --configuration Release
 ### Test Data Management
 
 - Medical terminology in `SymptomDictionary.DefaultSymptomDict`
+- JSON configuration in `Data/default-symptoms.json` (symptoms, synonyms, conjunctions)
 - Test scenarios in `TestDataBuilder` classes
 - Chief complaints data in `chief_complaints.json`
 

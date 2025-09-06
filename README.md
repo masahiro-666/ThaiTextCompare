@@ -13,8 +13,10 @@ A **production-ready** Thai medical text comparison system with advanced tokeniz
 🧩 **Compound Symptoms** - Expands complex symptoms like "แขนขวาขาขวาอ่อนแรง"  
 🔍 **Fuzzy Matching** - 70% similarity threshold with intelligent typo correction  
 📊 **Coverage Analysis** - Detailed comparison metrics and missing symptom detection  
+🎯 **Conjunction Filtering** - Automatically filters Thai conjunctions (และ, หรือ, แต่)  
+🔧 **JSON Configuration** - Dynamic loading of symptoms, conjunctions, and patterns  
 ⚡ **High Performance** - Optimized for large texts with automatic performance scaling  
-🧪 **Comprehensive Testing** - 64+ tests covering all scenarios  
+🧪 **Comprehensive Testing** - 82+ tests covering all scenarios including conjunction filtering  
 🏗️ **Modular Architecture** - Clean, maintainable codebase with Core/ components  
 🚀 **Production Ready** - Memory management, error handling, and CI/CD support
 
@@ -68,6 +70,16 @@ Missing: มีน้ำมูก
 ### Advanced Features
 
 ```csharp
+// Conjunction filtering (automatic)
+var result = engine.CompareThaiMedicalTexts("ไข้ และ ไอ", "ไข้ ไอ", 70.0);
+// Result: 100% match (conjunction "และ" automatically filtered)
+
+// Multiple conjunctions
+var result = engine.CompareThaiMedicalTexts(
+    "เจ็บคอ และ มีน้ำมูก แต่ ไม่ไข้",
+    "เจ็บคอ มีน้ำมูก ไม่ไข้", 70.0);
+// Result: 100% match (both "และ" and "แต่" filtered)
+
 // Compound symptom expansion
 var tokens = tokenizer.TokenizeThaiSymptoms("แขนขวาขาขวาอ่อนแรง");
 // Result: ["แขนขวาอ่อนแรง", "ขาขวาอ่อนแรง"]
@@ -90,10 +102,14 @@ ThaiTextCompare/
 ├── 📄 TESTING_STRATEGY.md          # Comprehensive testing docs
 ├── 🔧 run-tests.sh                 # Automated testing script
 ├── 📁 Core/                        # Modular architecture
-│   ├── ThaiMedicalTokenizer.cs     # Thai text tokenization
+│   ├── ThaiMedicalTokenizer.cs     # Thai text tokenization with conjunction filtering
 │   ├── ComparisonEngine.cs         # Comparison logic
-│   └── SymptomDictionary.cs        # Medical terminology
-├── 📁 Tests/                       # 64+ comprehensive tests
+│   ├── SymptomDictionary.cs        # Medical terminology with JSON loading
+│   └── SymptomDictionaryManager.cs # Dynamic dictionary management
+├── 📁 Data/                        # JSON configuration files
+│   ├── default-symptoms.json       # Medical symptoms, synonyms, conjunctions
+│   └── test-cases.json             # Test case scenarios
+├── 📁 Tests/                       # 82+ comprehensive tests
 │   ├── Unit/                       # 53 unit tests
 │   ├── Integration/                # 5 integration tests
 │   ├── Performance/                # Performance benchmarks
@@ -106,19 +122,20 @@ ThaiTextCompare/
 
 ## 🧪 Testing
 
-Our comprehensive testing strategy includes **64+ tests** across multiple categories:
+Our comprehensive testing strategy includes **82+ tests** across multiple categories:
 
 | Category        | Count | Coverage   | Purpose                      |
 | --------------- | ----- | ---------- | ---------------------------- |
 | **Unit**        | 53    | Core logic | Individual component testing |
-| **Integration** | 5     | Workflows  | End-to-end validation        |
+| **Integration** | 8     | Workflows  | End-to-end validation        |
 | **Performance** | 1     | Speed      | Timing benchmarks            |
 | **Stress**      | 6     | Limits     | System robustness            |
+| **Conjunction** | 14    | Filtering  | Thai conjunction filtering   |
 
 ### Run Tests
 
 ```bash
-# Quick test (all 64 tests)
+# Quick test (all 82+ tests)
 cd Tests && dotnet test
 
 # Automated comprehensive suite
@@ -134,9 +151,10 @@ dotnet test --filter "FullyQualifiedName~Stress"      # Stress tests
 
 ```
 ✅ Unit Tests: 53/53 passed
-✅ Integration Tests: 5/5 passed
+✅ Integration Tests: 8/8 passed (including conjunction filtering)
 ✅ Performance Tests: 1/1 passed
 ✅ Stress Tests: 6/6 passed
+✅ Conjunction Tests: 14/14 passed
 ✅ Code Coverage: >85% overall
 ✅ Memory Management: No leaks detected
 ```
@@ -184,21 +202,32 @@ dotnet test --filter "FullyQualifiedName~Stress"      # Stress tests
 - หายใจลำบาก (difficulty breathing), เจ็บหน้าอก (chest pain)
 - วิงเวียน (dizziness), คลื่นไส้ (nausea)
 
+### Thai Conjunction Filtering
+
+The system automatically filters out Thai conjunctions and function words:
+
+**Conjunctions**: และ (and), หรือ (or), แต่ (but), กับ (with)  
+**Time/Sequence**: แล้ว (then), ก็ (also), เมื่อ (when), จึง (therefore)  
+**References**: ที่ (that/which), นี้ (this), นั้น (that), นี่/นั่น (demonstratives)  
+**Purpose**: เพื่อ (for), ถ้า (if), เลย (at all)
+
 ### Synonym Recognition
 
 - ปวดศีรษะ ↔ ปวดหัว (headache variants)
 - มีน้ำมูก ↔ น้ำมูก (runny nose)
 - BP ต่ำ ↔ BPต่ำ (spacing variations)
+- วิงเวียน ↔ หน้ามืด (dizziness variants)
 
 ## 🚀 Production Deployment
 
 ### Requirements
 
-- ✅ All 64+ tests passing
+- ✅ All 82+ tests passing (including conjunction filtering)
 - ✅ >85% code coverage achieved
 - ✅ Performance benchmarks met
 - ✅ Memory leak tests passed
 - ✅ Stress tests completed
+- ✅ JSON configuration validation passed
 
 ### Deployment Options
 
@@ -263,7 +292,7 @@ dotnet build
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
 3. **Add tests** for new functionality (maintain >85% coverage)
-4. **Run test suite**: `./run-tests.sh` (all tests must pass)
+4. **Run test suite**: `./run-tests.sh` (all 82+ tests must pass)
 5. **Commit** changes (`git commit -m 'Add amazing feature'`)
 6. **Push** to branch (`git push origin feature/amazing-feature`)
 7. **Open** a Pull Request
@@ -312,12 +341,14 @@ dotnet build
 ```bash
 dotnet --version          # Should show .NET 9.0+
 dotnet build             # Should build successfully
-./run-tests.sh          # Should show all 64+ tests passing
+./run-tests.sh          # Should show all 82+ tests passing
 dotnet run              # Should run the application
 ```
 
 ## 📈 Roadmap
 
+- [x] **JSON Configuration** - Dynamic loading of symptoms, synonyms, and conjunctions
+- [x] **Conjunction Filtering** - Automatic Thai conjunction filtering
 - [ ] **Database Integration** - Persistent medical dictionaries
 - [ ] **REST API** - HTTP service with OpenAPI documentation
 - [ ] **Machine Learning** - AI-powered symptom similarity

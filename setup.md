@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-This is a production-ready C# .NET console application that compares Thai medical texts using advanced tokenization, fuzzy matching, and coverage-based analysis. The system features a **modular architecture**, **comprehensive testing framework** (64+ tests), and is optimized for medical applications requiring precise symptom matching with support for compound symptoms, typos, and concatenated text parsing.
+This is a production-ready C# .NET console application that compares Thai medical texts using advanced tokenization, fuzzy matching, and coverage-based analysis. The system features a **modular architecture**, **comprehensive testing framework** (82+ tests), **JSON-based configuration**, and is optimized for medical applications requiring precise symptom matching with support for compound symptoms, typos, concatenated text parsing, and **automatic Thai conjunction filtering**.
 
 ## 🎯 Key Features
 
@@ -10,6 +10,8 @@ This is a production-ready C# .NET console application that compares Thai medica
 
 - **Thai Medical Text Processing**: Specialized tokenization for Thai medical terminology
 - **Compound Symptom Handling**: Expands compound symptoms like "แขนขวาขาขวาอ่อนแรง"
+- **Thai Conjunction Filtering**: Automatically filters Thai conjunctions (และ, หรือ, แต่, etc.)
+- **JSON Configuration**: Dynamic loading of symptoms, synonyms, conjunctions, and patterns
 - **Fuzzy Matching**: 70% similarity threshold for typo correction
 - **Coverage-Based Matching**: Exact match logic requiring 100% coverage
 - **Concatenated Text Parsing**: Handles mixed medical/non-medical concatenated text
@@ -20,7 +22,8 @@ This is a production-ready C# .NET console application that compares Thai medica
 ### Production Features
 
 - **Modular Architecture**: Clean separation of concerns with Core/ components
-- **Comprehensive Testing**: 64+ tests covering Unit, Integration, Performance, and Stress scenarios
+- **JSON Configuration**: External configuration files for easy maintenance
+- **Comprehensive Testing**: 82+ tests covering Unit, Integration, Performance, and Stress scenarios
 - **Automated Test Suite**: Complete testing strategy with coverage reporting
 - **Error Handling**: Robust error handling and input validation
 - **Memory Management**: Memory leak prevention and optimization

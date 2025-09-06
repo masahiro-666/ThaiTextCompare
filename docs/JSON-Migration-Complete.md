@@ -32,7 +32,33 @@ Your Thai Medical Text Compare system now loads **ALL** its configuration from t
 }
 ```
 
-#### **3. Default Compound Patterns**
+#### **3. Thai Conjunctions (Function Words)**
+
+```json
+{
+  "conjunctions": [
+    "และ",
+    "หรือ",
+    "แต่",
+    "เพราะ",
+    "เพื่อ",
+    "จาก",
+    "ใน",
+    "บน",
+    "ที่",
+    "กับ",
+    "ซึ่ง",
+    "โดย",
+    "ตาม",
+    "เพิ่ม",
+    "รวม",
+    "ทั้ง"
+    // ... all 16 Thai function words filtered during tokenization
+  ]
+}
+```
+
+#### **4. Default Compound Patterns**
 
 ```json
 {
@@ -44,7 +70,7 @@ Your Thai Medical Text Compare system now loads **ALL** its configuration from t
 }
 ```
 
-#### **4. Common Patterns (from SetupCommonPatterns)**
+#### **5. Common Patterns (from SetupCommonPatterns)**
 
 ```json
 {
@@ -56,7 +82,7 @@ Your Thai Medical Text Compare system now loads **ALL** its configuration from t
 }
 ```
 
-#### **5. Side Weakness Pattern Config**
+#### **6. Side Weakness Pattern Config**
 
 ```json
 {

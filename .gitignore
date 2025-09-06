@@ -446,3 +446,25 @@ coverage/
 
 # Package manager lock files
 packages.lock.json
+
+# Thai Medical Text Compare specific
+# Backup files
+*-fixed.json
+*-backup.json
+*.bak
+
+# Generated documentation
+docs/generated/
+api-docs/
+
+# Performance benchmarks
+benchmarks/results/
+*.benchmark
+
+# Local development configuration
+.env.local
+.env.development
+
+# IDE-specific files
+.vs/
+.vscode/settings.json.local
