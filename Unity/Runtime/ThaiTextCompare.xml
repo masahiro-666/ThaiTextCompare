@@ -253,6 +253,14 @@
             <param name="tokens">List of tokens to filter</param>
             <returns>Filtered list without conjunctions</returns>
         </member>
+        <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.ProcessNegationPatterns(System.Collections.Generic.List{System.String})">
+            <summary>
+            Processes negation patterns in Thai medical text to create negated symptoms
+            Converts patterns like "ไม่ ไข้" to "ไม่ไข้" or "!ไข้"
+            </summary>
+            <param name="tokens">List of tokens to process</param>
+            <returns>List with processed negation patterns</returns>
+        </member>
         <member name="M:ThaiTextCompare.Core.ThaiMedicalTokenizer.CalculateLevenshteinDistance(System.String,System.String)">
             <summary>
             Calculates Levenshtein distance between two strings for more accurate typo detection

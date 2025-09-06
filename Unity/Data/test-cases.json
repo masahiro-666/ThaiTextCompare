@@ -371,6 +371,11 @@
       "text1": "แผลเล็กที่เข่า",
       "text2": "มีแผลเล็กที่เข่า",
       "description": "Wound description with/without possessive marker"
+    },
+    {
+        "text1": "ขา-แขนซ้ายอ่อนแรง",
+      "text2": "แขนซ้ายอ่อนแรง ขาซ้ายอ่อนแรง",
+      "description": "Left side weakness with hyphen and expanded individual symptoms"
     }
   ]
 }

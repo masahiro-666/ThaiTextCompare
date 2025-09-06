@@ -481,17 +481,17 @@ public static class SymptomDictionary
             return;
 
         // Create compound pattern for multiple body parts
-        var compoundPattern = string.Join("", bodyParts.Where(part => part != null).Select(part => $"{part}{side}")) + condition;
-        var expandedFormat = string.Join(" ", bodyParts.Where(part => part != null).Select(part => $"{part}{side}{condition}"));
+        var compoundPattern = string.Join("", bodyParts?.Where(part => part != null).Select(part => $"{part}{side}") ?? Enumerable.Empty<string>()) + condition;
+        var expandedFormat = string.Join(" ", bodyParts?.Where(part => part != null).Select(part => $"{part}{side}{condition}") ?? Enumerable.Empty<string>());
 
         AddCompoundSymptomPattern(compoundPattern, expandedFormat);
 
         // Create hyphenated version
-        var hyphenatedPattern = string.Join("-", bodyParts.Where(part => part != null).Select(part => $"{part}{side}")) + condition;
+        var hyphenatedPattern = string.Join("-", bodyParts?.Where(part => part != null).Select(part => $"{part}{side}") ?? Enumerable.Empty<string>()) + condition;
         AddCompoundSymptomPattern(hyphenatedPattern, expandedFormat);
 
         // Add individual symptoms to dictionary
-        var individualSymptoms = bodyParts.Select(part => $"{part}{side}{condition}").ToArray();
+        var individualSymptoms = bodyParts?.Select(part => $"{part}{side}{condition}").ToArray() ?? new string[0];
         AddSymptomWords(individualSymptoms);
     }
 

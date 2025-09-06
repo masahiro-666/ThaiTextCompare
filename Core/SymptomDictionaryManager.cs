@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
-namespace ThaiTextCompare.Core;
+namespace ThaiTextCompare.Core
+{
 
 /// <summary>
 /// Utility class for managing symptom dictionary and compound patterns
@@ -65,8 +69,8 @@ public static class SymptomDictionaryManager
             return createdPatterns;
 
         // Create compound pattern for multiple body parts
-        var compoundPattern = string.Join("", bodyParts.Where(part => part != null).Select(part => $"{part}{side}")) + condition;
-        var expandedFormat = string.Join(" ", bodyParts.Where(part => part != null).Select(part => $"{part}{side}{condition}"));
+        var compoundPattern = string.Join("", bodyParts?.Where(part => part != null).Select(part => $"{part}{side}") ?? Enumerable.Empty<string>()) + condition;
+        var expandedFormat = string.Join(" ", bodyParts?.Where(part => part != null).Select(part => $"{part}{side}{condition}") ?? Enumerable.Empty<string>());
 
         if (SymptomDictionary.AddCompoundSymptomPattern(compoundPattern, expandedFormat))
         {
@@ -74,14 +78,14 @@ public static class SymptomDictionaryManager
         }
 
         // Create hyphenated version
-        var hyphenatedPattern = string.Join("-", bodyParts.Select(part => $"{part}{side}")) + condition;
+        var hyphenatedPattern = string.Join("-", bodyParts?.Select(part => $"{part}{side}") ?? Enumerable.Empty<string>()) + condition;
         if (SymptomDictionary.AddCompoundSymptomPattern(hyphenatedPattern, expandedFormat))
         {
             createdPatterns.Add(hyphenatedPattern);
         }
 
         // Add individual symptoms to dictionary
-        var individualSymptoms = bodyParts.Select(part => $"{part}{side}{condition}").ToArray();
+        var individualSymptoms = bodyParts?.Select(part => $"{part}{side}{condition}").ToArray() ?? Array.Empty<string>();
         SymptomDictionary.AddSymptomWords(individualSymptoms);
 
         return createdPatterns;
@@ -183,7 +187,7 @@ public static class SymptomDictionaryManager
 public class AddSymptomsResult
 {
     public int AddedWordsCount { get; set; }
-    public List<string> AddedWords { get; set; } = new();
+    public List<string> AddedWords { get; set; } = new List<string>();
     public bool CompoundPatternAdded { get; set; }
     public string? CompoundPattern { get; set; }
     public string? ExpandedFormat { get; set; }
@@ -220,4 +224,5 @@ public class ConfigStatistics
     public int AddedWords { get; set; }
     public int CompoundPatterns { get; set; }
     public DateTime ExportedAt { get; set; }
+}
 }
